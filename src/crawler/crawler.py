@@ -21,7 +21,6 @@ class Crawler:
         'sec-fetch-mode': 'navigate',
         'sec-fetch-user': '?1',
         'sec-fetch-dest': 'document',
-        # 'referer': 'https://shop.kz/smartfony/filter/almaty-is-v_nalichii-or-ojidaem-or-dostavim/apply/?PAGEN_1=12',
         'accept-language': 'ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7',
         # Requests sorts cookies= alphabetically
         # 'cookie': 'iRegionSectionId=9; iRegionSectionName=%D0%90%D0%BB%D0%BC%D0%B0%D1%82%D1%8B; LIVECHAT_GUEST_HASH=3cc482fa60459e7ef4adaceda57cf9da; rrpvid=875964550757541; _gcl_au=1.1.2024388877.1662654053; __auc=2ad788c81831de77c862d01f063; _gid=GA1.2.1253645743.1662654054; show_region_popup=0; rcuid=631a166bf007f33b0651f66b; tmr_lvid=1ff761e4e60084217ce8173894f5c45c; tmr_lvidTS=1662654059432; _ym_uid=16626540601005268109; _ym_d=1662654060; BX_USER_ID=d4865fda7cf3aa4b134108b0200cd20f; _ym_isad=2; _fbp=fb.1.1662654059953.18821908; _ms=a8b2685c-0369-420c-b390-8abc40cf5f41; BITRIX_CONVERSION_CONTEXT_ru=%7B%22ID%22%3A27%2C%22EXPIRE%22%3A1662746340%2C%22UNIQUE%22%3A%5B%22conversion_visit_day%22%5D%7D; rrlevt=1662703908496; PHPSESSID=SO0psgUjyo0l1zIDgUBEdASx2dJEtt1n; __asc=bb5ed9e5183215d57fd60f9a88b; _ym_visorc=b; _ga=GA1.2.651545052.1662654054; _ga_VQ49ETWVSY=GS1.1.1662712108.4.1.1662712134.34.0.0; tmr_detect=0%7C1662712135908; tmr_reqNum=49',
@@ -55,6 +54,8 @@ class Crawler:
         'tmr_reqNum': '49',
     }
 
+    output = []
+
     def make_request(self, url):
         response = requests.get(url, headers=self.headers, cookies=self.cookies)
         if response.ok:
@@ -72,7 +73,6 @@ class Crawler:
             main_div = div1.find('div', class_='bx_catalog_item_title')
             a = main_div.find('a')
             url = a.get('href')
-            # url = BASE_URL + url
             links.append(url)
         return links
 
@@ -92,11 +92,8 @@ class Crawler:
             return
 
     def get_info(self, links):
-        output = []
 
         for link in links:
-
-
             link = BASE_URL + link
             html = self.make_request(link)
             soup = self.get_soup(html)
@@ -106,30 +103,18 @@ class Crawler:
             memory_size = self.get_memory_size(soup)
 
             res = Ad(name=name, price=price, articul=articul, memory_size=memory_size, link=link).dict()
-            output.append(res)
+            self.output.append(res)
 
-            # data = json.dumps(res, indent=5)
-            # file = open('smartphones.json', 'a')
-            # file.write(data)
-            # file.close()
-
-        return output
+        return
 
     def write_to_file(self, data):
-        with open('smart.json', 'a') as file:
+        with open('smartphones.json', 'a') as file:
             json.dump(data, file, indent=5)
             file.close()
 
     def loop(self, soup):
         links = self.get_links(soup)
-        output = self.get_info(links)
-        self.write_to_file(output)
-
-        # data = json.dumps(output, indent=5)
-        # file = open('smartphones.json', 'a')
-        # file.write(data)
-        # file.close()
-
+        self.get_info(links)
         return self.get_pagination(soup)
 
     def main(self):
@@ -142,6 +127,8 @@ class Crawler:
             link = self.loop(soup)
             if link == None:
                 break
+        self.write_to_file(self.output)
+
         return
 
     @staticmethod
